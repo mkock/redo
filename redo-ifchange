@@ -1,6 +1,1 @@
-#!/bin/sh
-
-for dep in $@; do
-    md5sum $dep | awk '{ print $1 }' > ".redo/$REDO_TARGET/$dep"
-done
- 
+redo

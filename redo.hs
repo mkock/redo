@@ -17,19 +17,29 @@ import System.IO
 import System.IO.Error
 import System.Process
 
+metaDir = ".redo"
+
 main :: IO ()
-main = mapM_ redo =<< getArgs
+main = do
+    mapM_ redo =<< getArgs
+    progName <- getProgName
+    redoTarget' <- lookupEnv "REDO_TARGET"
+    case (progName, redoTarget') of
+        ("redo-ifchange", Just redoTarget) -> mapM_ (writeMD5 redoTarget) =<< getArgs
+        ("redo-ifchange", Nothing) -> error "Missing REDO_TARGET environment variable"
+        _ -> return ()
+    where writeMD5 redoTarget dep = writeFile (metaDir </> redoTarget </> dep) =<< md5' dep
 
 traceShow' arg = traceShow arg arg
 
 redo :: String -> IO ()
 redo target = do
-    upToDate' <- upToDate target metaDepsDir
-    unless upToDate' $ maybe printMissing redo' =<< redoPath target
+    upToDate' <- upToDate metaDepsDir
+    unless upToDate' $ maybe missingDo redo' =<< redoPath target
   where
     redo' :: FilePath -> IO ()
     redo' path = do
-        catchJust (\e -> guard $ isDoesNotExistError e)
+        catchJust (guard . isDoesNotExistError)
                   (removeDirectoryRecursive $ metaDepsDir)
                   (\_ -> return ())
         createDirectoryIfMissing True $ metaDepsDir
@@ -39,13 +49,15 @@ redo target = do
         (_, _, _, ph) <- createProcess $ (shell $ cmd path) {env = Just newEnv}
         exit <- waitForProcess ph
         case exit of
-            ExitSuccess -> do renameFile tmp target
+            ExitSuccess -> renameFile tmp target
             ExitFailure code -> do
             hPutStrLn stderr $ "Redo script exited with non-zero exit code: " ++ show code
             removeFile tmp
     tmp = target ++ "---redoing"
-    metaDepsDir = ".redo" </> target
-    printMissing = error $ "No .do file found for target '" ++ target ++ "'"
+    metaDepsDir = metaDir </> target
+    missingDo = do
+        exists <- doesFileExist target
+        unless exists $ error $ "No .do file found for target '" ++ target ++ "'"
     cmd path =
         unwords ["sh", path, "0", takeBaseName target, tmp, " > ", tmp]
 
@@ -54,11 +66,11 @@ redoPath target = listToMaybe <$> filterM doesFileExist candidates
   where
     candidates = (target ++ ".do") : [replaceBaseName target "default" ++ ".do" | hasExtension target]
 
-upToDate :: String -> FilePath -> IO Bool
-upToDate target metaDepsDir = catch
+upToDate :: FilePath -> IO Bool
+upToDate metaDepsDir = catch
     (do deps <- getDirectoryContents metaDepsDir
         all id `liftM` mapM depUpToDate deps)
-    (\(e :: IOException) -> return False)
+    (\(_ :: IOException) -> return False)
     where
       depUpToDate :: FilePath -> IO Bool
       depUpToDate dep = catch
