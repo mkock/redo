@@ -40,9 +40,9 @@ redo target = do
     redo' :: FilePath -> IO ()
     redo' path = do
         catchJust (guard . isDoesNotExistError)
-                  (removeDirectoryRecursive $ metaDepsDir)
+                  (removeDirectoryRecursive metaDepsDir)
                   (\_ -> return ())
-        createDirectoryIfMissing True $ metaDepsDir
+        createDirectoryIfMissing True metaDepsDir
         writeFile (metaDepsDir </> path) =<< md5' path
         oldEnv <- getEnvironment
         let newEnv = toList $ adjust (++ ":.") "PATH" $ insert "REDO_TARGET" target $ fromList oldEnv
@@ -51,8 +51,8 @@ redo target = do
         case exit of
             ExitSuccess -> renameFile tmp target
             ExitFailure code -> do
-            hPutStrLn stderr $ "Redo script exited with non-zero exit code: " ++ show code
-            removeFile tmp
+                hPutStrLn stderr $ "Redo script exited with non-zero exit code: " ++ show code
+                removeFile tmp
     tmp = target ++ "---redoing"
     metaDepsDir = metaDir </> target
     missingDo = do
@@ -73,7 +73,7 @@ upToDate target = catch
         if exists
         then do 
             deps <- getDirectoryContents (metaDir </> target)
-            (traceShow' . and) `liftM` mapM depUpToDate deps
+            (traceShow' . and) `fmap` mapM depUpToDate deps
         else return False)
     (\(_ :: IOException) -> return False)
     where
@@ -83,7 +83,7 @@ upToDate target = catch
             newMD5 <-  md5' dep
             doScript <- doPath dep
             case doScript of
-                Nothing -> return $ oldMD5 == newMD5
+                Nothing -> return (oldMD5 == newMD5)
                 Just _ -> do 
                     upToDate' <- upToDate dep
                     return $ (oldMD5 == newMD5) && upToDate'
