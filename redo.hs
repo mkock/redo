@@ -27,7 +27,7 @@ main = do
     case (progName, redoTarget') of
         ("redo-ifchange", Just redoTarget) -> mapM_ (writeMD5 redoTarget) =<< getArgs
         ("redo-ifchange", Nothing) -> error "Missing REDO_TARGET environment variable"
-        _ -> return ()
+        _invalid -> return ()
     where writeMD5 redoTarget dep = writeFile (metaDir </> redoTarget </> dep) =<< md5' dep
 
 traceShow' arg = traceShow arg arg
