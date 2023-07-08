@@ -3,22 +3,23 @@ name:               mkock-redo
 version:            0.1.0.0
 
 -- A short (one-line) description of the package.
--- synopsis:
+synopsis: Make replacement, implementation of redo, based on github.com/jekor/redo.
 
 -- A longer description of the package.
--- description:
+description: This is experimental code written by following a YouTube tutorial. It's a Make replacement, written in Haskell, based on github.com/jekor/redo.
 
 -- A URL where users can report bugs.
 -- bug-reports:
 
 -- The license under which the package is released.
--- license:
+license:            Unlicense
 author:             Martin Kock
 maintainer:         kock.martin@gmail.com
 
 -- A copyright notice.
 -- copyright:
--- category:
+category: Distribution
+
 extra-source-files:
     CHANGELOG.md
     README.md
@@ -33,12 +34,12 @@ executable mkock-redo
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
-    build-depends:    base ^>=4.14.3.0
-                     ,bytestring >= 0.10.12.0
-                     ,containers >= 0.6.5.1
-                     ,directory >= 1.3.6.0
-                     ,filepath >= 1.4.2.1
-                     ,process >= 1.6.13.2
-                     ,pureMD5 >= 2.1.4
+    build-depends:    base ^>= 4.14.3.0
+                     , bytestring >= 0.10.12.0
+                     , containers >= 0.6.5.1
+                     , directory >= 1.3.6.0
+                     , filepath >= 1.4.2.1
+                     , process >= 1.6.13.2
+                     , pureMD5 >= 2.1.4
     hs-source-dirs:   .
     default-language: Haskell2010
